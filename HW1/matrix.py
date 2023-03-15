@@ -8,7 +8,7 @@ def matrixTranspose(mat):
     for i in range(m):
         for j in range(n):
             matT[j, i] = mat[i, j]
-         
+
     return matT
 
 def dot_product(vec1, vec2):
@@ -42,30 +42,34 @@ def LUdecomp(mat):
             if mat[i, j] != 0.0:
                 fac = mat[i, j] / mat[j, j]
                 mat[i, j+1:] -= fac * mat[j, j+1:]    # upper triangular matrix
-                mat[i, j] = fac     # lower triangular matrix
+                mat[i, j] = fac     # lower triangular matrix (without diagonal element)
 
     return mat
 
-# input: matrix [L\U]
+# input: matrix [L\U], vector b
 # output: vector x 
-# LUx = b
+# Ax = LUx = b
 # let y = Ux
 # so Ly = b, solved y by forward substitution
 # then Ux = y, solve x by backward substitution
 def LUsolve(mat, b):
     n = len(mat)
 
+    # Ly = b
     # forward substitution
     for i in range(1, n):
-        b[i] -= dot_product(mat[i, :i], b[:i])
+        b[i] -= dot_product(mat[i, :i], b[:i])  # y
 
+    # Ux = y
     # backward substitution
     b[n-1] /= mat[n-1, n-1]
     for i in range(n-2, -1, -1):
-        b[i] = (b[i] - dot_product(mat[i, i+1:], b[i+1:])) / mat[i, i]
+        b[i] = (b[i] - dot_product(mat[i, i+1:], b[i+1:])) / mat[i, i]  # x
     
     return b
 
+# compute all the columns of the inverse matrix by solving
+# linear equation AX_i = I_i
 def matrixInverse(mat):
     n = len(mat) 
     mat = LUdecomp(mat)
