@@ -12,7 +12,7 @@ class NaiveBayes():
 
     def _fit_discrete(self, X, y):
         X = X.astype(np.uint8)
-        X = X / 8
+        X = X // 8
         X = X.reshape(len(X), -1)
 
         self._label, self._prior = self._calculate_prior(y)
@@ -35,7 +35,7 @@ class NaiveBayes():
 
     def _predict_discrete(self, X, eps=1e-15):
         X = X.astype(np.uint8)
-        X = X / 8
+        X = X // 8
         X = X.reshape(len(X), -1)
         self._posterior = np.zeros((len(X), len(self._label)), dtype=np.float64)
 
@@ -107,9 +107,9 @@ class NaiveBayes():
 
         print("recording...")
         if self.discrete:
-            filename = 'result_discrete.txt'
+            filename = 'test_discrete.txt'
         else:
-            filename = 'result_continuous.txt'
+            filename = 'test_continuous.txt'
 
         with open(os.path.join(path, filename), 'w') as f:
             for num in range(len(self._y_pred)):
