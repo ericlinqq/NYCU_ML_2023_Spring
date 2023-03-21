@@ -107,9 +107,9 @@ class NaiveBayes():
 
         print("recording...")
         if self.discrete:
-            filename = 'test_discrete.txt'
+            filename = 'result_discrete.txt'
         else:
-            filename = 'test_continuous.txt'
+            filename = 'result_continuous.txt'
 
         with open(os.path.join(path, filename), 'w') as f:
             for num in range(len(self._y_pred)):
