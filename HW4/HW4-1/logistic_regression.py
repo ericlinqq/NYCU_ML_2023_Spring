@@ -54,6 +54,7 @@ def hessian(W, A, y):
     D = np.identity(A.shape[0])
 
     eAW = np.exp(-A@W)
+    # diag = eAW / (1+eAW)**2 <- overflow
     diag = 1/(1+eAW) - 1/(1+eAW)/(1+eAW)
 
     np.fill_diagonal(D, diag)
