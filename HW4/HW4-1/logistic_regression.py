@@ -1,9 +1,8 @@
 import numpy as np
 
 
-def logistic_regression(W, A, y, mode='gd', lr=0.5, delta=None, max_iter=None):
-    if mode != 'gd' and mode != 'newton':
-        raise "mode should be either 'gd' or 'newton' !!!!"
+def logistic_regression(W, A, y, gd=True, lr=0.5, delta=None, max_iter=None):
+    W_c = W.copy()
 
     if delta is None and max_iter is None:
         raise "delta and max_iter cannot both be None !!!!"
@@ -14,23 +13,22 @@ def logistic_regression(W, A, y, mode='gd', lr=0.5, delta=None, max_iter=None):
         if max_iter is not None and n_iter >= max_iter:
             break
 
-        grad = gradient(W, A, y)
+        grad = gradient(W_c, A, y)
 
         if delta is not None and (grad**2).sum() < delta:
             break
 
-        if mode == 'gd':
-            W +=  lr * grad
-        else:
-            H = hessian(W, A, y)
+        update = grad
+        if not gd:
+            H = hessian(W_c, A, y)
             try:
                 update = np.linalg.inv(H) @ grad
-            except np.linalg.LinAlgError:
-                update = grad
+            except:
+                print("Hessain matrix is singular !!!!")
 
-            W += lr * update
+        W_c += lr * update
 
-    return W
+    return W_c
 
 
 def predict(W, A):

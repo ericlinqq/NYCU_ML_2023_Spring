@@ -7,7 +7,7 @@ from logistic_regression import logistic_regression, predict
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--lr', type=float, default=0.05, help='learning rate')
+    parser.add_argument('--lr', type=float, default=1e-3, help='learning rate')
     parser.add_argument('--delta', type=float, default=None, help='if sum of square weight < delta, stop')
     parser.add_argument('--max_iter', type=int, default=None, help='maximum iteration')
     parser.add_argument('--N', type=int, default=50, help='Number of datapoint for one dataset')
@@ -19,6 +19,7 @@ def parse_args():
     parser.add_argument('--vx2', type=float, default=2, help='variance of the second dataset\'s x coordinate')
     parser.add_argument('--my2', type=float, default=10, help='mean of the second dataset\'s y coordinate')
     parser.add_argument('--vy2', type=float, default=2, help='variance of the second dataset\'s y coordinate')
+    parser.add_argument('--plot_path', type=str, default='./plot.png', help='the path and filename to save the plot result')
 
     args = parser.parse_args()
     return args
@@ -68,7 +69,7 @@ def specificity(cm):
 
 def print_result(W, y, y_pred):
     print("w: ")
-    print(W)
+    print(*[str(row)[1:-1] for row in W], sep='\n')
     print()
     cm = confusion_matrix(y, y_pred, verbose=True)
     print()
@@ -83,8 +84,8 @@ def visualization(ax, A, y, title):
     point_y = A[:, 2]
     idx_0 = (y == 0).squeeze(1)
 
-    ax.scatter(point_x[idx_0], point_y[idx_0], color='blue')
-    ax.scatter(point_x[~idx_0], point_y[~idx_0], color='red')
+    ax.scatter(point_x[idx_0], point_y[idx_0], color='red')
+    ax.scatter(point_x[~idx_0], point_y[~idx_0], color='blue')
     ax.set_title(title)
 
 
@@ -99,15 +100,15 @@ if __name__ == '__main__':
 
     # -----------------------------Logistic Regression-----------------------------
     # Gradient Descent
-    W_G = logistic_regression(W0, A, y, 'gd', args.lr, args.delta, args.max_iter)
-    y_pred_G = predict(W_G, A)
     print("Gradient descent:\n")
+    W_G = logistic_regression(W0, A, y, gd=True, lr=args.lr, delta=args.delta, max_iter=args.max_iter)
+    y_pred_G = predict(W_G, A)
     print_result(W_G, y, y_pred_G)
 
-    # Newton's method
-    W_N = logistic_regression(W0, A, y, 'newton', args.lr, args.delta, args.max_iter)
-    y_pred_N = predict(W_N, A)
+    # Newton's method 
     print("Newton's method:\n")
+    W_N = logistic_regression(W0, A, y, gd=False, lr=args.lr, delta=args.delta, max_iter=args.max_iter)
+    y_pred_N = predict(W_N, A)
     print_result(W_N, y, y_pred_N)
 
     # visualization
@@ -120,4 +121,4 @@ if __name__ == '__main__':
     # plot Newton's method
     visualization(axes[2], A, y_pred_N, 'Newton\'s method')
 
-    fig.savefig('plot.png')
+    fig.savefig(args.plot_path)
