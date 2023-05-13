@@ -1,0 +1,21 @@
+Part 1.
+kernel_type: linear	testing accuracy: 95.08
+kernel_type: polynomial	testing accuracy: 34.68
+kernel_type: RBF	testing accuracy: 95.32
+------------------------------------------------------------
+Part 2.
+linear kernel
+best combination (C): 0.01	best training accuracy: 96.90
+after grid search testing accuracy: 95.96
+
+polynomail kernel
+best combination (C, gamma, coef0, degree): (1, 1, 1, 2)	best training accuracy: 98.16
+after grid search testing accuracy: 97.72
+
+RBF kernel
+best combination (C, gamma): (100, 0.01)	best training accuracy: 98.34
+after grid search testing accuracy: 97.52
+------------------------------------------------------------
+Part 3.
+kernel_type: linear + RBF kernel	testing accuracy: 95.32
+------------------------------------------------------------
