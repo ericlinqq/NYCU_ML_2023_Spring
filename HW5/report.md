@@ -280,7 +280,7 @@ def linearRBF(X, X_, gamma):
 
     return kernel
 ```
-Using isKernel=True in svm_train function to use the precomputed kernel.  
+Using isKernel=True in svm_problem function to use the precomputed kernel.  
 ```python
 # main.py
 K = linearRBF(X_train, X_train, best_comb[1])
@@ -293,15 +293,73 @@ print(f"kernel_type: linear + RBF kernel\ttesting accuracy: {p_acc[0]:.2f}", fil
 
 ### b. experiments settings and results  
 #### Part 1.  
+result:  
+```
+kernel_type: linear	testing accuracy: 95.08
+kernel_type: polynomial	testing accuracy: 34.68
+kernel_type: RBF	testing accuracy: 95.32
+```
 
 #### Part 2.  
 * Linear kernel  
+
+search space:  
+```python
+param = {"kernel_type": kernel_type['linear'], 
+         "C": [10**x for x in range(-5, 6)]}
+```
+result:  
+```
+best combination (C): (0.01)
+best training accuracy: 96.90
+after grid search testing accuracy: 95.96
+```
+
 * Polynomial kernel  
+
+search space:  
+```python
+param = {"kernel_type": kernel_type['polynomial'], 
+         "C": [10**x for x in range(-3, 4)],
+         "gamma": [10**x for x in range(-3, 4)],
+         "coef0": [x for x in range(-1, 2)],
+         "degree": [x for x in range(2, 5)]}
+```
+result:  
+```
+best combination (C, gamma, coef0, degree): (1, 1, 1, 2)
+best training accuracy: 98.16
+after grid search testing accuracy: 97.72
+```
+
 * RBF kernel  
 
+search space:  
+```python
+param = {"kernel_type": kernel_type['RBF'], 
+         "C": [10**x for x in range(-3, 4)],
+         "gamma": [10**x for x in range(-3, 4)]}
+```
+result:  
+```
+best combination (C, gamma): (100, 0.01)
+best training accuracy: 98.34
+after grid search testing accuracy: 97.52
+```
+
 #### Part 3.  
+I set (C, gamma) from RBF kernel grid search result, which is (100, 0.01).  
+result:  
+```
+kernel_type: linear + RBF kernel	testing accuracy: 95.32
+```
 
 ### c. observations and discussion  
+As the results shown in section b, the testing accuracy of C-SVC with polynomial kernel increases the most after grid search, and there are three parameter that has changed, one is gamma, it changes from $\frac{1}{784}$ to $1$ another is coef0, it changes from $0$ to $1$, and the third is degree, it changes from $3$ to $2$.  
+And I found that if you only increase C, the accuracy would increase a lot.
+If you only increase gamma, the accuracy would also increase a lot.
+If you only choose the value of coef0 signicantly deviate from 0, the accuracy would also increse a lot.  
+If you only set the value of degree smaller than 3, the accuracy would also increase a lot.  
 
 
 
