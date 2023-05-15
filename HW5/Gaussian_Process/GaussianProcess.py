@@ -4,7 +4,7 @@ import os
 from scipy.optimize import minimize
 
 
-class GaussianProcess():
+class GaussianProcess:
     def __init__(self, kernel_func, *, beta=5, **kernel_param):
         self.kernel_func = kernel_func
         self.kernel_param = kernel_param
@@ -39,7 +39,7 @@ class GaussianProcess():
         return self.mean, self.var
 
     def visualization(self, title, fig_path, fig_name='figure.png'):
-        plt.figure(figsize=(20, 5))
+        plt.figure(figsize=(15, 5))
         plt.plot(self.x_star, self.mean, color='lightseagreen', label='mean')
         plt.fill_between(self.x_star, self.mean + 2 * self.std, self.mean - 2 * self.std, facecolor='aquamarine', label='95% confidence interval')
         plt.scatter(self.X, self.y, color='mediumvioletred', label='training data')
