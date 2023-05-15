@@ -20,7 +20,7 @@ def load_data(data_path):
     return np.array(X), np.array(y)
 ```
 * Rational Quadratic Kernel  
-Follow the formula referenced from [this website][1], I defined a rational_quadratic_kernel function in kernel.py.  
+Follow the formula referenced from [peterroelants.github.io][1], I defined a rational_quadratic_kernel function in kernel.py.  
 <div align="center">
 <img src="./img/rational_quadratic_kernel.png" width = "400" alt="rational quadratic kernel" align=center />
 </div>  
@@ -192,15 +192,112 @@ As the results shown in section b, by using the optimized kernel parameter, comp
 ## II. SVM 
 ### a. code with detailed explanations
 #### Part 1.  
+* Load Data  
+I used the pandas.read_csv to load all the data and transform them to numpy array.  
+```python
+# dataloader.py
+def load_data(data_path):
+    X_train = pd.read_csv(os.path.join(data_path, "X_train.csv"), header=None).to_numpy()
+    y_train = pd.read_csv(os.path.join(data_path, "Y_train.csv"), header=None).to_numpy().reshape(-1)
+    X_test = pd.read_csv(os.path.join(data_path, "X_test.csv"), header=None).to_numpy()
+    y_test = pd.read_csv(os.path.join(data_path, "Y_test.csv"), header=None).to_numpy().reshape(-1)
+
+    return X_train, y_train, X_test, y_test
+```
+
+* Using different kernel  
+I follow the libsvm svm_train usage reference from its [libsvm github repo][2] and [libsvm/python][3]
+<div align="center">
+<img src="./img/svm_train_usage.png" width = "700" alt="svm_train usage" align=center />
+</div>
+I defined a dictionary called kernel_type to map a specific kernel type to its corresponding argument value.  
+
+```python
+# main.py
+kernel_type = {"linear": 0,
+               "polynomial": 1,
+               "RBF": 2,
+               "sigmoid": 3,
+               "precomputed": 4}
+```
+
+By passing the kernel argument in svm_train function, I got the result for a given kernel type.  
+```python
+# main.py
+for key, value in kernel_type.items():
+    if key == 'precomputed' or key == 'sigmoid':
+        continue
+    m = svm_train(y_train, X_train, f"-q -t {value}")
+    p_labels, p_acc, p_vals = svm_predict(y_test, X_test, m, "-q")
+    print(f"kernel_type: {key}\ttesting accuracy: {p_acc[0]:.2f}", file=f)
+```
 
 #### Part 2.  
+* Use C-SVC  
+As the libsvm usage shown above, the default type of SVM is already C-SVC, so I didn't explicitly pass the -s argument value.  
+
+* Grid Search  
+Here, I defined a function called gridSearch, which you can set kerenl type and the kernel parameters (and the cost for C-SVC, of course), if one is not given, it will use the default value. The parameters is given in a list, which is the seach space for the parameter, I used itertools.product to get all the combinations of the parameters value for searching, and choose the combination with the highest accuracy in the 3-fold cross validation.  
+
+```python
+# gridSearch.py
+def gridSearch(X_train, y_train, **param):
+    kernel_type = param.get("kernel_type", 0)
+    C = param.get("C", [1])
+    gamma = param.get("gamma", [1 / X_train.shape[1]])
+    coef0 = param.get("coef0", [0])
+    degree = param.get("degree", [3])
+
+    combinations = [C, gamma, coef0, degree]
+    best_acc = 0
+    best_comb = None
+    for comb in list(itertools.product(*combinations)):
+        acc = svm_train(y_train, X_train, f"-q -t {kernel_type} -v 3 -c {comb[0]} -g {comb[1]} -r {comb[2]} -d {comb[3]}")
+        if acc > best_acc:
+            best_acc = acc
+            best_comb = comb
+
+    print(f"best combination (C, gamma, coef0, degree): {best_comb}\tbest accuracy: {best_acc}")
+    return best_comb, best_acc
+```
 
 #### Part 3.  
+* Using linear + RBF kernel  
+I followed the instruction referenced from [libsvm github repo][3] and [stackoverflow.com][4] and defined a new kernel that combined linear kernel and RBF kernel.  
+And for the RBF kernel, I used scipy.spatial.distance.cdist to calculate the squared euclidean distance between two x.  
+
+<div align="center">
+<img src="./img/precomputed_kernel_usage.png" width = "400" alt="precomputed kernel usage" align=center />
+</div>
+
+```python
+# precomputed_kernel.py
+def linearRBF(X, X_, gamma):
+    linear = X @ X_.T
+    RBF = np.exp(-gamma * cdist(X, X_, 'sqeuclidean'))
+    kernel = linear + RBF
+    kernel = np.hstack((np.arange(1, len(X)+1).reshape(-1, 1), kernel))
+
+    return kernel
+```
+Using isKernel=True in svm_train function to use the precomputed kernel.  
+```python
+# main.py
+K = linearRBF(X_train, X_train, best_comb[1])
+KK = linearRBF(X_test, X_train, best_comb[1])
+prob = svm_problem(y_train, K, isKernel=True)
+m = svm_train(prob, f"-q -t {kernel_type['precomputed']} -c {best_comb[0]}")
+p_labels, p_acc, p_vals = svm_predict(y_test, KK, m, "-q")
+print(f"kernel_type: linear + RBF kernel\ttesting accuracy: {p_acc[0]:.2f}", file=f)
+```
 
 ### b. experiments settings and results  
 #### Part 1.  
 
 #### Part 2.  
+* Linear kernel  
+* Polynomial kernel  
+* RBF kernel  
 
 #### Part 3.  
 
@@ -209,3 +306,6 @@ As the results shown in section b, by using the optimized kernel parameter, comp
 
 
 [1]: https://peterroelants.github.io/posts/gaussian-process-kernels/
+[2]: https://github.com/cjlin1/libsvm
+[3]: https://github.com/cjlin1/libsvm/tree/master/python
+[4]: https://stackoverflow.com/questions/7715138/using-precomputed-kernels-with-libsvm

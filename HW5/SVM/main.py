@@ -33,12 +33,13 @@ if __name__ == '__main__':
     kernel_type = {"linear": 0,
                    "polynomial": 1,
                    "RBF": 2,
+                   "sigmoid": 3, 
                    "precomputed": 4}
 
 # Part 1.
     print("Part 1.", file=f)
     for key, value in kernel_type.items():
-        if key == 'precomputed':
+        if key == 'precomputed' or key == 'sigmoid':
             continue
         m = svm_train(y_train, X_train, f"-q -t {value}")
         p_labels, p_acc, p_vals = svm_predict(y_test, X_test, m, "-q")
