@@ -2,7 +2,7 @@ import numpy as np
 from scipy.spatial.distance import squareform, pdist
 
 
-def user_defined_kernel(img, width, **kernel_param):
+def user_defined_kernel(img, *, width, **kernel_param):
     gamma_s = kernel_param.get('gamma_s', 0.001)
     gamma_c = kernel_param.get('gamma_c', 0.001)
 

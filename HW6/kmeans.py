@@ -3,17 +3,13 @@ from kernel import user_defined_kernel
 
 
 class Kmeans:
-    def __init__(self, *, kernel_function=None, **kernel_param): 
-        self.X = None
-        self.height = None
-        self.width = None
-        self.kernel_function = kernel_function
-        self.kernel_param = kernel_param
+    def __init__(self):
         np.random.seed(19990410)
-        self.colormap = np.random.choice(range(256), size=(100, 3))
+        self.colormap = np.random.randint(0, 256, size=(100, 3))
         self.n_cluster = None
         self.centroid_method = None
         self.EPS = None
+
 
     def _euclidean(self, point, data):
         return np.sqrt(np.sum((point - data) ** 2, axis=1))
@@ -45,7 +41,7 @@ class Kmeans:
                 centroids[:, c] = np.random.normal(X_mean[c], X_std[c], size=self.n_cluster)
         else:
             raise Exception ('unavailable centroid method!')
-        
+
         return centroids
 
 
@@ -55,82 +51,79 @@ class Kmeans:
         for i in range(len(res)):
             res[i, :] = color[assigned_cluster[i]]
 
-        return res.reshape(self.height, self.width, 3)
+        return res
 
-    
-    def _kmeans(self, X):
+
+    def _E_step(self, mean, X):
+        euclid_dist = np.zeros((len(X), self.n_cluster))
+        for c in range(self.n_cluster):
+            euclid_dist[:, c] = self._euclidean(mean[c], X)
+        assigned_cluster = np.argmin(euclid_dist, axis=1)
+
+        return assigned_cluster
+
+
+    def _M_step(self, mean, assigned_cluster, X):
+        new_mean = np.zeros(mean.shape)
+        for i in range(self.n_cluster):
+            assign_i = np.argwhere(assigned_cluster == i).reshape(-1)
+            for j in assign_i:
+                new_mean[i] += X[j]
+            if len(assign_i) > 0:
+                new_mean[i] /= len(assign_i)
+
+        return new_mean
+
+
+    def _kmeans(self, X, visualize=True):
         print("initialize centroid")
         init_mean = self._initialize_centroid(X)
         assigned_cluster = np.zeros(len(X), dtype=np.uint8)
-        segment = []
+        assigned_color = []
         n_iter = 1
         print("start EM")
         while True:
             print("E step")
             # E step
-            euclid_dist = np.zeros((len(X), self.n_cluster))
-            for c in range(self.n_cluster):
-                euclid_dist[:, c] = (self._euclidean(init_mean[c], X))
-            assigned_cluster = np.argmin(euclid_dist, axis=1)
+            assigned_cluster = self._E_step(init_mean, X)
 
             print("M step")
             # M step
-            new_mean = np.zeros(init_mean.shape)
-            for i in range(self.n_cluster):
-                assign_i = np.argwhere(assigned_cluster == i).reshape(-1)
-                for j in assign_i:
-                    new_mean[i] += X[j]
-                if len(assign_i) > 0:
-                    new_mean[i] /= len(assign_i)
+            new_mean = self._M_step(init_mean, assigned_cluster, X)
 
             diff = np.sum((new_mean - init_mean) ** 2)
             init_mean = new_mean
-            assign_color = self._cluster_color(assigned_cluster)
-            segment.append(assign_color)
+            if visualize:
+                assign_color = self._cluster_color(assigned_cluster)
+                assigned_color.append(assign_color)
 
             print(f"Iteration {n_iter}")
             for i in range(self.n_cluster):
                 print(f"cluster={i+1} : (N pixel assigned : {np.count_nonzero(assigned_cluster == i)})")
             print(f"Difference : {diff}")
             print()
-            
+
             n_iter += 1
             if diff < self.EPS:
                 self.centroids = new_mean
                 break
 
-        return assigned_cluster, segment
+        if visualize:
+            return assigned_cluster, np.array(assigned_color)
+
+        return assigned_cluster
 
 
-    def fit(self, X, n_cluster=2, centroid_method='kmeans++', EPS=1e-9):
-        if len(X.shape) == 3:
-            self.height = X.shape[0]
-            self.width = X.shape[1]
-            self.X = X.reshape(-1, X.shape[-1])
-        else:
-            self.X = X
-            self.height = 100
-            self.width = 100
+    def fit(self, X, n_cluster=2, centroid_method='kmeans++', EPS=1e-9, visualize=False):
+        if len(X.shape) != 2:
+            raise Exception ('Input shoud be a 2d matrix!')
         self.n_cluster = n_cluster
         self.centroid_method = centroid_method
         self.EPS = EPS
-        if self.kernel_function == None:
-            return self._kmeans(self.X)
-        elif self.kernel_function == user_defined_kernel: 
-            print("compute kernel function")
-            gram = self.kernel_function(self.X, self.width, **self.kernel_param)
-        else:
-            gram = self.kernel_function(self.X, **self.kernel_param)
+
         print("starting k means")
-        return self._kmeans(gram)
+        return self._kmeans(X, visualize=visualize)
 
 
     def evaluate(self, X_test):
-        assigned_cluster = np.zeros(len(X_test), dtype=np.uint8)
-        for i in range(len(X_test)):
-            euclid_dist = []
-            for j in range(self.n_cluster):
-                euclid_dist.append(self._euclidean(self.centroids[j], X_test))
-            assigned_cluster[i] = np.argmin(euclid_dist)
-        
-        return assigned_cluster
+        return self._E_step(self.centroids, X_test)
