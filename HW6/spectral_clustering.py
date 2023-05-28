@@ -5,10 +5,12 @@ import matplotlib.pyplot as plt
 import os
 
 class SpectralClustering(Kmeans):
-    def __init__(self, *, mode='unnormalized'):
+    def __init__(self, *, mode='unnormalized', U=None):
         super().__init__()
         self.mode = mode
         self.U = None
+        # if U is not None:
+        #     self.U = U
 
 
     def _eigen_decomposition(self, W):
@@ -25,6 +27,7 @@ class SpectralClustering(Kmeans):
 
         sort_index = np.argsort(eigenvalue)
         self.U = eigenvector[:, sort_index]
+        # np.save(self.mode+'_U_matrix', self.U)
 
 
     def _spectral_clustering(self, W, visualize=True):
@@ -68,7 +71,6 @@ class SpectralClustering(Kmeans):
         ax.set_xlabel('1st eigenvector')
         ax.set_ylabel('2nd eigenvector')
         ax.set_zlabel('3rd eigenvector')
-
         plt.savefig(os.path.join(plot_path, plot_name))
 
 

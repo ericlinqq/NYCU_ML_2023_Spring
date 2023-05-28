@@ -12,6 +12,7 @@ def user_defined_kernel(img, *, width, **kernel_param):
     for i in range(n):
         S[i] = [i // width, i % width]
 
-    K = squareform(np.exp(-gamma_s * pdist(S, 'sqeuclidean'))) * squareform(np.exp(-gamma_c * pdist(img, 'sqeuclidean')))
+    K = squareform(np.exp(-gamma_s * pdist(S, 'sqeuclidean'))) * \
+        squareform(np.exp(-gamma_c * pdist(img, 'sqeuclidean')))
 
     return K

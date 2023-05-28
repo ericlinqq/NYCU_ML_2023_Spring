@@ -2,6 +2,55 @@
 <center><b>311554046 林愉修</b></center>  
 
 ## a. code with detailed explanations  
+* Experiment 
+For all the experiments from part 1 to part 4, I directly program it as below. One can change the setting (image, initialize method, kernel_parameters, etc.) by argparse.  
+```python
+# main.py
+if __name__ == '__main__':
+    args = parse_args()
+    img, height, width = load_data(args.data_path)
+    W = user_defined_kernel(img, width=width, 
+                            gamma_s=args.gamma_s, 
+                            gamma_c=args.gamma_c)
+
+    print("kernel k means")
+    kernel_k_means = Kmeans()
+    for n_cluster in range(2, 5):
+        print("-" * 40 + f"k = {n_cluster}" + "-" * 40)
+        cluster_result, assigned_color = kernel_k_means.fit(
+                                            W, n_cluster=n_cluster, 
+                                            centroid_method=args.centroid_method, 
+                                            EPS=args.EPS, visualize=True)
+        visualization = assigned_color.reshape(-1, height, width, assigned_color.shape[-1])
+        save_gif(visualization, gif_path=args.gif_path, 
+                gif_name=f"kernel_kmeans_{args.centroid_method}_{n_cluster}.gif", 
+                duration=2)
+
+
+    print("unnormalized spectral clustering")
+    unnormalized_SC = SpectralClustering(mode='unnormalized')
+    for n_cluster in range(2, 5):
+        print("-" * 40 + f"k = {n_cluster}" + "-" * 40)
+        cluster_result, assigned_color = unnormalized_SC.fit(
+                                            W, n_cluster=n_cluster, 
+                                            centroid_method=args.centroid_method, 
+                                            EPS=args.EPS, visualize=True)
+        visualization = assigned_color.reshape(-1, height, width, assigned_color.shape[-1])
+        save_gif(visualization, gif_path=args.gif_path, 
+                gif_name=f"unnormalized_SC_{args.centroid_method}_{n_cluster}.gif", 
+                duration=2)
+
+        if n_cluster == 2:
+            unnormalized_SC.plotEigenspaceLaplacian2D(
+                            assigned_cluster=cluster_result, 
+                            plot_path=args.plot_path, 
+                            plot_name=f"unnormalized_SC_{args.centroid_method}_{n_cluster}.png")
+        elif n_cluster == 3:
+            unnormalized_SC.plotEigenspaceLaplacian3D(
+                            assigned_cluster=cluster_result, 
+                            plot_path=args.plot_path, 
+                            plot_name=f"unnormalized_SC_{args.centroid_method}_{n_cluster}.png")
+```
 * Load Data  
 I defined a function called load_data, which uses OpenCV to load the image, and covert it to 2D array.  
 ```python
@@ -26,7 +75,8 @@ def user_defined_kernel(img, *, width, **kernel_param):
     for i in range(n):
         S[i] = [i // width, i % width]
 
-    K = squareform(np.exp(-gamma_s * pdist(S, 'sqeuclidean'))) * squareform(np.exp(-gamma_c * pdist(img, 'sqeuclidean')))
+    K = squareform(np.exp(-gamma_s * pdist(S, 'sqeuclidean'))) * \
+        squareform(np.exp(-gamma_c * pdist(img, 'sqeuclidean')))
 
     return K
 ```
@@ -290,3 +340,89 @@ class SpectralClustering:
 
         plt.savefig(os.path.join(plot_path, plot_name))
 ```
+
+## b. experiments settings and results & discussions  
+### Part 1.  
+Initialization method: Kmean++  
+Kernel parameter: $\gamma_{s}=0.00007$ , $\gamma_{c}=0.00007$  
+Number of cluster: 2  
+> The images below from left to right, show the original image, kernel kmeans clustering result, ratio cut spectral clustering result and normalized cut spectral clustering result, respectively.  
+
+* image 1  
+![image1](./image1.png) ![KK_kmeans++_2](./gif/image1/kernel_kmeans_kmeans++_2.gif) ![unSC_kmeans++_2](./gif/image1/unnormalized_SC_kmeans++_2.gif) ![nSC_kmeans++_2](./gif/image1/normalized_SC_kmeans++_2.gif)  
+* image 2  
+![image2](./image2.png) ![KK_kmeans++_2](./gif/image2/kernel_kmeans_kmeans++_2.gif) ![unSC_kmeans++_2](./gif/image2/unnormalized_SC_kmeans++_2.gif) ![nSC_kmeans++_2](./gif/image2/normalized_SC_kmeans++_2.gif)   
+
+From the results above, we can cleary distinguish the clustering result for all methods.
+For the execution time, kernel k means is much faster than spectral clustering since we need to perform eigen depcomposition on graph Laplacian matrix which increase the computational cost.  
+
+### Part 2.  
+The settings are the same as part 1 except for the number of cluster.  
+#### Number of cluster: 3  
+> The images below from left to right, show the original image, kernel kmeans clustering result, ratio cut spectral clustering result and normalized cut spectral clustering result, respectively.  
+* image 1
+![image1](./image1.png) ![KK_kmeans++_3](./gif/image1/kernel_kmeans_kmeans++_3.gif) ![unSC_kmeans++_3](./gif/image1/unnormalized_SC_kmeans++_3.gif) ![nSC_kmeans++_3](./gif/image1/normalized_SC_kmeans++_3.gif)
+* image 2 
+![image2](./image2.png) ![KK_kmeans++_3](./gif/image2/kernel_kmeans_kmeans++_3.gif) ![unSC_kmeans++_3](./gif/image2/unnormalized_SC_kmeans++_3.gif) ![nSC_kmeans++_3](./gif/image2/normalized_SC_kmeans++_3.gif)
+
+For k=3, we can clearly distinguish the clustering result for kernel k means and ratio cut spectral clustering, while normalized cut spectral clustering has more sparse clustering result.  
+
+#### Number of cluster: 4  
+* image 1
+![image1](./image1.png) ![KK_kmeans++_4](./gif/image1/kernel_kmeans_kmeans++_4.gif) ![unSC_kmeans++_4](./gif/image1/unnormalized_SC_kmeans++_4.gif) ![nSC_kmeans++_4](./gif/image1/normalized_SC_kmeans++_4.gif)
+* image 2
+![image2](./image2.png) ![KK_kmeans++_4](./gif/image2/kernel_kmeans_kmeans++_4.gif) ![unSC_kmeans++_4](./gif/image2/unnormalized_SC_kmeans++_4.gif) ![nSC_kmeans++_4](./gif/image2/normalized_SC_kmeans++_4.gif)
+
+For k=4, all these methods have a similar clustering result, which is not very well partitioned.
+
+### Part 3.  
+Here, I try Random method, which sample from the normal distributions construct with respect to a certain channel to get a centroid coordinate.  
+The settings are the same as part 2 except for the initialization method.  
+Here I show the results with number of cluster is 3.  
+> The images below from left to right, show the original image, kernel kmeans clustering result, ratio cut spectral clustering result and normalized cut spectral clustering result, respectively. 
+* image 1  
+    * Kmeans++
+![image1](./image1.png) ![KK_kmean++_3](./gif/image1/kernel_kmeans_kmeans++_3.gif) ![unSC_kmeans++_3](./gif/image1/unnormalized_SC_kmeans++_3.gif) ![nSC_kmeans++](./gif/image1/normalized_SC_kmeans++_3.gif)
+    * Random
+![image1](./image1.png) ![KK_random_3](./gif/image1/kernel_kmeans_random_3.gif) ![unSC_random_3](./gif/image1/unnormalized_SC_random_3.gif) ![nSC_random_3](./gif/image1/normalized_SC_random_3.gif)
+
+* image 2  
+    * Kmeans++
+![image2](./image2.png) ![KK_kmean++_3](./gif/image2/kernel_kmeans_kmeans++_3.gif) ![unSC_kmeans++_3](./gif/image2/unnormalized_SC_random_3.gif) ![nSC_kmeans++_3](./gif/image2/normalized_SC_kmeans++_3.gif)
+    * Random
+![image2](./image2.png) ![KK_random_3](./gif/image2/kernel_kmeans_random_3.gif) ![unSC_random_3](./gif/image2/unnormalized_SC_random_3.gif) ![nSC_random_3](./gif/image2/normalized_SC_random_3.gif)
+
+Random method takes much more iterations to converge since the initialization is not that good, and k-means is very sensitive to initial centroid.
+Althought it did not happen in the experiment, but bad initialization method may lead to one or many cluster has no point being assigned to it.  
+
+### Part 4.  
+#### number of cluster: 2
+* image 1  
+    * ratio cut  
+![eigenspace2D](./plot/image1/unnormalized_SC_kmeans++_2.png)
+    * normalized cut  
+![eigenspace2D](./plot/image1/normalized_SC_kmeans++_2.png)
+
+* image 2  
+    * ratio cut  
+![eigenspace2D](./plot/image2/unnormalized_SC_kmeans++_2.png)
+    * normalized cut  
+![eigenspace2D](./plot/image2/normalized_SC_kmeans++_2.png)
+
+#### number of cluster: 3
+* image 1
+    * ratio cut  
+![eigenspace3D](./plot/image1/unnormalized_SC_kmeans++_3.png)
+    * normalized cut  
+![eigenspace3D](./plot/image1/normalized_SC_kmeans++_3.png)
+
+* image 2  
+    * ration cut  
+![eigenspace3D](./plot/image2/unnormalized_SC_kmeans++_3.png)
+    * normalized cut  
+![eigenspace3D](./plot/image2/normalized_SC_kmeans++_3.png)
+
+As the results shown above, the pixel in different cluster seems to be well seperated in the eigenspace of graph Laplacian, that is, the pixels in the same cluster has similar coordinate in the eigenspace of graph Laplacian.  
+
+## c. observations and dicussion
+The kernel parameters (i.e. $\gamma_s$ and $\gamma_c$) has to set carefully, if $gamma_s$ is greater tahn $\gamma_c$, the clustering does not too detail, while if $gamma_s$ is way lower than $\gamma_c$, the result of clustering is too unclear. Moreover, when I set $\gamma_s = \gamma_c = 0.001$, and the result of kernel k means clustering is very terrible.  
