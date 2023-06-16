@@ -4,3 +4,7 @@ __pycache__/
 .DS_Store
 .ipynb_checkpoints/
 *.npy
+Yale_Face_Database
+HW7/tsne_python/images
+mnist2500_labels.txt
+mnist2500_X.txt
